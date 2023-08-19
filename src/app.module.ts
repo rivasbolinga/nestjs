@@ -5,7 +5,7 @@ import { BookmarmModule } from './bookmarm/bookmarm.module';
 
 // Main module would import other modules.
 @Module({
-  imports: [AuthModule, UserModule, BookmarmModule],
+  imports: [AuthModule, UserModule, BookmarkModule],
 
 })
 export class AppModule {}
