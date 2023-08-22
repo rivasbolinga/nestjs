@@ -3,34 +3,27 @@ import { PrismaService } from 'src/prisma/prisma.service';
 import { AuthDto } from './dto';
 import * as bcrypt from 'bcrypt';
 import { PrismaClientKnownRequestError } from '@prisma/client/runtime/library';
+import { JwtService } from '@nestjs/jwt';
+import { ConfigService } from '@nestjs/config';
 
 @Injectable({})
 export class AuthService {
-  constructor(private prisma: PrismaService) {}
+  constructor(private prisma: PrismaService, private jwt: JwtService, private config: ConfigService) {}
   async login(dto: AuthDto) {
     const user = await this.prisma.user.findUnique({
       where: {
         email: dto.email
       },
     });
-    // console.log(user.email, 'email');
-
+ 
     if(!user) 
     throw new ForbiddenException(
       'Credentials incorrect',
     );
-
-  //  if (dto.email === user.email) {
-  //   console.log(user.email)
-  //  }
-    // find user by email
-    // If user doesn't exist throw exception
-    // compare password
-    console.log('user.hash', user.hash);
-    console.log('dto.password', dto.password);
     const pwMatches = await bcrypt.compare(user.hash, dto.password);
-    console.log(pwMatches);
-    // if password incorrect throw exception
+   if(!pwMatches)
+   throw new ForbiddenException('Credentials incorrect');
+  return this.signToken(user.id, user.email);
   }
 
   async signup(dto: AuthDto) {
@@ -42,7 +35,7 @@ export class AuthService {
         hash,
       },
     });
-    return user;
+    return this.signToken(user.id, user.email);
   } catch (error) {
     if (error instanceof PrismaClientKnownRequestError) {
       if (error.code === 'P2002') {
@@ -52,4 +45,17 @@ export class AuthService {
     throw error;
   }
     }
+  
+  async signToken(userId: number, email: string): Promise<string> {
+    const payload = {
+      sub: userId,
+      email:
+    };
+
+    const secret = this.config.get('JWT_SECRET');
+    return this.jwt.signAsync(payload, {
+      expiresIn: '15m',
+      secret: ''
+    });
+ }
 }
