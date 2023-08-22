@@ -8,7 +8,10 @@ import { ConfigService } from '@nestjs/config';
 
 @Injectable({})
 export class AuthService {
-  constructor(private prisma: PrismaService, private jwt: JwtService, private config: ConfigService) {}
+  constructor(
+    private prisma: PrismaService,
+    private jwt: JwtService,
+    private config: ConfigService) {}
   async login(dto: AuthDto) {
     const user = await this.prisma.user.findUnique({
       where: {
@@ -18,11 +21,12 @@ export class AuthService {
  
     if(!user) 
     throw new ForbiddenException(
-      'Credentials incorrect',
+      'User incorrect',
     );
     const pwMatches = await bcrypt.compare(user.hash, dto.password);
+    console.log('hash', user.hash, 'dto', dto.password)
    if(!pwMatches)
-   throw new ForbiddenException('Credentials incorrect');
+   throw new ForbiddenException('Pasword incorrect');
   return this.signToken(user.id, user.email);
   }
 
@@ -46,16 +50,22 @@ export class AuthService {
   }
     }
   
-  async signToken(userId: number, email: string): Promise<string> {
+  async signToken(userId: number, email: string): Promise<{access_token: string}> {
     const payload = {
       sub: userId,
-      email:
+      email,
     };
 
     const secret = this.config.get('JWT_SECRET');
-    return this.jwt.signAsync(payload, {
-      expiresIn: '15m',
-      secret: ''
-    });
+    const token = await this.jwt.signAsync(
+      payload,
+      {
+        expiresIn: '15m',
+        secret,
+      },
+    );
+    return {
+      access_token: token
+    }
  }
 }
