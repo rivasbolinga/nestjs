@@ -10,7 +10,6 @@ import { User } from '@prisma/client';
 export class UserController {
   @Get('me')
   getMe(@GetUser() user: User) {
-    console.log(user)
     return user;
   }
 }

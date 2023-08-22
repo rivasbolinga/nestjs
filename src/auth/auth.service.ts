@@ -11,53 +11,82 @@ export class AuthService {
   constructor(
     private prisma: PrismaService,
     private jwt: JwtService,
-    private config: ConfigService) {}
+    private config: ConfigService,
+  ) {}
   async login(dto: AuthDto) {
-    const user = await this.prisma.user.findUnique({
-      where: {
-        email: dto.email
-      },
-    });
- 
-    if(!user) 
-    throw new ForbiddenException(
-      'User incorrect',
-    );
+    const user =
+      await this.prisma.user.findUnique({
+        where: {
+          email: dto.email,
+        },
+      });
 
-    console.log('hash here', user.hash)
-    console.log('dto here', dto.password);
-   
+    if (!user)
+      throw new ForbiddenException(
+        'User incorrect',
+      );
+
+
     const pwMatches = await bcrypt.compare(
       dto.password,
       user.hash,
     );
-   
-   if(!pwMatches)
-   throw new ForbiddenException('Pasword incorrect');
-  return this.signToken(user.id, user.email);
+
+    if (!pwMatches)
+      throw new ForbiddenException(
+        'Pasword incorrect',
+      );
+    return this.signToken(user.id, user.email);
   }
 
   async signup(dto: AuthDto) {
     try {
- const hash = await bcrypt.hash(dto.password, 10);
-    const user = await this.prisma.user.create({
-      data: {
-        email: dto.email,
-        hash,
-      },
-    });
-    return this.signToken(user.id, user.email);
-  } catch (error) {
-    if (error instanceof PrismaClientKnownRequestError) {
-      if (error.code === 'P2002') {
-        throw new ForbiddenException('Credentials taken')
+      const hash = await bcrypt.hash(
+        dto.password,
+        10,
+      );
+      const user = await this.prisma.user.create({
+        data: {
+          email: dto.email,
+          hash,
+        },
+      });
+      return this.signToken(user.id, user.email);
+    } catch (error) {
+      if (
+        error instanceof
+        PrismaClientKnownRequestError
+      ) {
+        if (error.code === 'P2002') {
+          throw new ForbiddenException(
+            'Credentials taken',
+          );
+        }
       }
+      throw error;
     }
-    throw error;
   }
+  async sendPasswordResetEmail(email: string) {
+    const user =
+      await this.prisma.user.findUnique({
+        where: { email },
+      });
+
+    if (!user) {
+      throw new ForbiddenException(
+        'User not found',
+      );
     }
-  
-  async signToken(userId: number, email: string): Promise<{access_token: string}> {
+    // Generate token
+     return this.signToken(user.id, user.email);
+    //send email
+ 
+  }
+
+  async signToken(
+    userId: number,
+    email: string,
+  ): Promise<{ access_token: string }> {
     const payload = {
       sub: userId,
       email,
@@ -72,7 +101,7 @@ export class AuthService {
       },
     );
     return {
-      access_token: token
-    }
- }
+      access_token: token,
+    };
+  }
 }
