@@ -23,8 +23,15 @@ export class AuthService {
     throw new ForbiddenException(
       'User incorrect',
     );
-    const pwMatches = await bcrypt.compare(user.hash, dto.password);
-    console.log('hash', user.hash, 'dto', dto.password)
+
+    console.log('hash here', user.hash)
+    console.log('dto here', dto.password);
+   
+    const pwMatches = await bcrypt.compare(
+      dto.password,
+      user.hash,
+    );
+   
    if(!pwMatches)
    throw new ForbiddenException('Pasword incorrect');
   return this.signToken(user.id, user.email);

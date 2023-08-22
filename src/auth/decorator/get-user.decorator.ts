@@ -12,7 +12,8 @@ export const GetUser = createParamDecorator(
       .switchToHttp()
       .getRequest();
     if (data) {
-      return request.user[data];
+      console.log(request)
+    
     }
     return request.user;
   },
